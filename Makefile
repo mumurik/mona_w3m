@@ -3,6 +3,15 @@
 # Makefile.  Generated from Makefile.in by configure.
 #
 
+#mumurik begin add
+TARGET  = MONAFILE
+# SOURCES = FileManager.cpp FileWindow.cpp FileBrowser.cpp Icon.cpp
+INSTDIR = $(BINDIR)/APPS/W3M/$(TARGET).APP
+INSTFILES  = ICONS.BM5
+CLEANFILES = $(INSTFILES)
+include Makefile.boehm_gc.inc
+#mumurik end add
+
 SHELL=/bin/sh
 PACKAGE = w3m
 VERSION = 0.5.2
@@ -36,8 +45,9 @@ RC_DIR = ~/.w3m
 ETC_DIR = $(sysconfdir)
 CONF_DIR = $(sysconfdir)/$(PACKAGE)
 
-CFLAGS = $(OPTS) -I. -I$(top_srcdir) -g -O2 -I$(srcdir)/libwc $(CPPFLAGS) $(DEFS)
-WCCFLAGS = -DUSE_UNICODE -I$(srcdir) -I$(srcdir)/..
+CFLAGS = $(OPTS) -I. -I$(top_srcdir) -g -O2 -I$(srcdir)/libwc $(CPPFLAGS) $(DEFS) $(GC_CFLAGS) 
+# mumurik WCCFLAGS = -DUSE_UNICODE -I$(srcdir) -I$(srcdir)/..
+WCCFLAGS =
 CPPFLAGS = 
 DEFS = -DHAVE_CONFIG_H -DAUXBIN_DIR=\"$(AUXBIN_DIR)\" \
 	-DCGIBIN_DIR=\"$(CGIBIN_DIR)\" -DHELP_DIR=\"$(HELP_DIR)\" \
@@ -46,10 +56,22 @@ DEFS = -DHAVE_CONFIG_H -DAUXBIN_DIR=\"$(AUXBIN_DIR)\" \
         -DLOCALEDIR=\"$(localedir)\"
 LDFLAGS =  -L../../mona/core/scheme/BoehmGC/gc-7.0//lib
 LIBS = 
-EXT_LIBS = -L. -lindep  -L../../mona/core/scheme/BoehmGC/gc-7.0//lib -lgc
-W3M_LIBS =  -L./libwc -lwc
-WCTARGET = libwc/libwc.a
+EXT_LIBS = -L. -lindep  -L../../mona/core/scheme/BoehmGC/gc-7.0//lib
+#mumurik -lgc
+#mumurik W3M_LIBS =  -L./libwc -lwc
+W3M_LIBS = 
+#mumurik WCTARGET = libwc/libwc.a
+WCTARGET = 
 NLSTARGET = 
+
+#mumurik begin add
+CXXFLAGS = -O3 -g -idirafter . -Wall $(GC_CFLAGS) -mno-stack-arg-probe # -g -finstrument-functions #-DMACRO_TRACE -pg 
+
+.SUFFIXES: .cpp .o
+.cpp.o:
+	$(CXX) -g $(CXXFLAGS) $(INCLUDE) -c $< -o $@
+
+#mumurik end add
 
 MAKE_ARGS = PERL='$(PERL)' MKDIR='$(MKDIR)' \
 	BIN_DIR='$(bindir)' AUXBIN_DIR='$(AUXBIN_DIR)' \
@@ -84,6 +106,8 @@ KEYBIND_OBJ = keybind.o
 VERSION=0.5.2+cvs-1.1001
 MODEL=-EN
 
+
+
 SRCS=main.c file.c buffer.c display.c etc.c search.c linein.c table.c local.c \
 	form.c map.c frame.c rc.c menu.c mailcap.c image.c \
 	symbol.c entity.c terms.c url.c ftp.c mimehead.c regex.c news.c \
@@ -91,11 +115,11 @@ SRCS=main.c file.c buffer.c display.c etc.c search.c linein.c table.c local.c \
 OBJS=main.o file.o buffer.o display.o etc.o search.o linein.o table.o local.o\
 	form.o map.o frame.o rc.o menu.o mailcap.o image.o \
 	symbol.o entity.o terms.o url.o ftp.o mimehead.o regex.o news.o \
-	func.o cookie.o history.o backend.o $(KEYBIND_OBJ)
+	func.o cookie.o history.o backend.o $(KEYBIND_OBJ) $(GC_OBJECTS)
 LSRCS=anchor.c parsetagx.c tagtable.c istream.c
 LOBJS=anchor.o parsetagx.o tagtable.o istream.o
 LLOBJS=version.o
-ALIBOBJS=Str.o indep.o regex.o textlist.o parsetag.o myctype.o hash.o
+ALIBOBJS=Str.o indep.o regex.o textlist.o parsetag.o myctype.o hash.o $(GC_OBJECTS)
 ALIB=libindep.a
 ALLOBJS=$(OBJS) $(LOBJS) $(LLOBJS)
 
