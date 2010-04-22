@@ -15,8 +15,10 @@
 #define KEYDATA_HASH_SIZE 16
 static Hash_iv *keyData = NULL;
 static char keymap_initialized = FALSE;
+#ifndef MONA
 static struct stat sys_current_keymap_file;
 static struct stat current_keymap_file;
+#endif
 
 void
 setKeymap(char *p, int lineno, int verbose)
@@ -114,9 +116,12 @@ setKeymap(char *p, int lineno, int verbose)
 }
 
 static void
+#ifdef MONA
+interpret_keymap(FILE * kf, int force)
+{
+#else
 interpret_keymap(FILE * kf, struct stat *current, int force)
 {
-#ifndef MONA
     int fd;
     struct stat kstat;
 #endif
@@ -189,12 +194,20 @@ initKeymap(int force)
     FILE *kf;
 
     if ((kf = fopen(confFile(KEYMAP_FILE), "rt")) != NULL) {
+#ifdef MONA
+	interpret_keymap(kf,
+#else
 	interpret_keymap(kf, &sys_current_keymap_file,
+#endif
 			 force || !keymap_initialized);
 	fclose(kf);
     }
     if ((kf = fopen(rcFile(keymap_file), "rt")) != NULL) {
+#ifdef MONA
+	interpret_keymap(kf,
+#else
 	interpret_keymap(kf, &current_keymap_file,
+#endif
 			 force || !keymap_initialized);
 	fclose(kf);
     }

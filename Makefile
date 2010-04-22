@@ -127,7 +127,7 @@ ALLOBJS=$(CPPOBJS) $(ALLCOBJS)
 
 
 #mumurik add begin
-SOURCES=$(CPPOBJS:.o=.c)
+SOURCES=$(CPPOBJS:.o=.cpp)
 CSOURCES=$(ALLCOBJS:.o=.c)
 OBJECTS=$(ALLOBJS)
 
