@@ -116,8 +116,10 @@ setKeymap(char *p, int lineno, int verbose)
 static void
 interpret_keymap(FILE * kf, struct stat *current, int force)
 {
+#ifndef MONA
     int fd;
     struct stat kstat;
+#endif
     Str line;
     char *p, *s, *emsg;
     int lineno;
@@ -127,6 +129,9 @@ interpret_keymap(FILE * kf, struct stat *current, int force)
     int verbose = 1;
     extern int str_to_bool(char *value, int old);
 
+#ifdef MONA
+    MONA_TRACE("currently, always re-load keymap.\n");
+#else
     if ((fd = fileno(kf)) < 0 || fstat(fd, &kstat) ||
 	(!force &&
 	 kstat.st_mtime == current->st_mtime &&
@@ -134,6 +139,8 @@ interpret_keymap(FILE * kf, struct stat *current, int force)
 	 kstat.st_ino == current->st_ino && kstat.st_size == current->st_size))
 	return;
     *current = kstat;
+#endif
+    
 
     lineno = 0;
     while (!feof(kf)) {

@@ -20,7 +20,19 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
+
+#ifdef MONA
+
+#define MONA_TRACE(s) fprintf(stderr, s)
+#define MONA_TRACE_FMT(s) fprintf s
+
+#include <time.h>
+typedef uint32_t pid_t;
+
+#else /* not MONA */
 #include <sys/stat.h>
+#endif
+
 #include <unistd.h>
 #include "config.h"
 #include "history.h"
@@ -804,6 +816,20 @@ global char MetaRefresh init(FALSE);
 global char fmInitialized init(FALSE);
 global char QuietMessage init(FALSE);
 global char TrapSignal init(TRUE);
+
+#ifdef MONA
+/* do not support C-c yet. */
+#define TRAP_ON
+#define TRAP_OFF
+
+/* return 1 even if path is dir*/
+extern int file_exist(char *path);
+
+extern void unlink(char *path);
+extern int is_dir(char *path);
+extern struct tm* localtime(const time_t *timer);
+
+#else
 #define TRAP_ON if (TrapSignal) { \
     prevtrap = mySignal(SIGINT, KeyAbort); \
     if (fmInitialized) \
@@ -815,6 +841,7 @@ global char TrapSignal init(TRUE);
     if (prevtrap) \
 	mySignal(SIGINT, prevtrap); \
 }
+#endif /* not MONA */
 
 extern unsigned char GlobalKeymap[];
 extern unsigned char EscKeymap[];
@@ -851,7 +878,12 @@ global int NOproxy_netaddr init(TRUE);
 #define DNS_ORDER_INET6_ONLY 6
 global int DNS_order init(DNS_ORDER_UNSPEC);
 extern int ai_family_order_table[7][3];	/* XXX */
-#endif				/* INET6 */
+#elif defined(MONA) /* not INET6, but MONA */
+#define DNS_ORDER_UNSPEC     0
+#define DNS_ORDER_INET_ONLY  1
+global int DNS_order init(DNS_ORDER_UNSPEC);
+extern int ai_family_order_table[2][3];	/* XXX */
+#endif				/* not INET6, but MONA */
 global TextList *NO_proxy_domains;
 global char NoCache init(FALSE);
 global char use_proxy init(TRUE);

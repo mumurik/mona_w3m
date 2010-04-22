@@ -305,7 +305,13 @@ static struct sel_c dnsorders[] = {
     {N_S(DNS_ORDER_INET6_ONLY), N_("inet6 only")},
     {0, NULL, NULL}
 };
-#endif				/* INET6 */
+#elif defined(MONA)
+static struct sel_c dnsorders[] = {
+    {N_S(DNS_ORDER_UNSPEC), N_("unspecified")},
+    {N_S(DNS_ORDER_INET_ONLY), N_("inet only")},
+    {0, NULL, NULL}
+};
+#endif				/* INET6 or MONA */
 
 #ifdef USE_COOKIE
 static struct sel_c badcookiestr[] = {
@@ -1187,7 +1193,9 @@ void
 init_rc(void)
 {
     int i;
+#ifndef MONA
     struct stat st;
+#endif
     FILE *f;
 
     if (rc_dir != NULL)
@@ -1204,6 +1212,18 @@ init_rc(void)
     system_charset_str = display_charset_str;
 #endif
 
+#ifdef MONA
+    if (!file_exist(rc_dir)) {
+            MONA_TRACE("we should create dir here, but NYI\n");
+	    fprintf(stderr, "Can't open config directory (%s)!", rc_dir);
+	    goto rc_dir_err;
+    }
+    if (!is_dir(rc_dir)) {
+	/* not a directory */
+	fprintf(stderr, "%s is not a directory!", rc_dir);
+	goto rc_dir_err;
+    }
+#else
     if (stat(rc_dir, &st) < 0) {
 	if (errno == ENOENT) {	/* no directory */
 	    if (do_mkdir(rc_dir, 0700) < 0) {
@@ -1228,6 +1248,7 @@ init_rc(void)
 	fprintf(stderr, "%s is not writable!", rc_dir);
 	goto rc_dir_err;
     }
+#endif /* not MONA */
     no_rc_dir = FALSE;
     tmp_dir = rc_dir;
 

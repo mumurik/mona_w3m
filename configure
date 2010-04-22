@@ -7628,7 +7628,11 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
   rm -f conftest.er1
   cat conftest.err >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
+#mumurik
+  echo "dumy EXIT!!!"
+  ac_header_compiler=yes
+#  (exit $ac_status);
+ } && {
 	 test -z "$ac_c_werror_flag" ||
 	 test ! -s conftest.err
        } && test -s conftest.$ac_objext; then
@@ -7636,8 +7640,8 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_header_compiler=no
+echo "comment out by mumurik!"
+#	ac_header_compiler=no
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
@@ -8016,7 +8020,9 @@ else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-	ac_cv_lib_gc_GC_init=no
+#	ac_cv_lib_gc_GC_init=no
+  echo "changed by mumurik!"
+	ac_cv_lib_gc_GC_init=yes
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \

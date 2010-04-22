@@ -14,7 +14,9 @@ typedef struct dirent Directory;
 #include <sys/dir.h>
 typedef struct direct Directory;
 #endif				/* not HAVE_DIRENT_H */
+#ifndef MONA
 #include <sys/stat.h>
+#endif /* not MONA */
 
 #ifndef S_IFMT
 #define S_IFMT  0170000

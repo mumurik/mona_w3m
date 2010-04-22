@@ -9,9 +9,13 @@
 #endif
 #include <stdio.h>
 #include <time.h>
+
+#ifndef MONA
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <utime.h>
+#endif /* not MONA */
+
 /* foo */
 
 #include "html.h"
@@ -237,9 +241,39 @@ loadSomething(URLFile *f,
     return buf;
 }
 
+#ifdef MONA
+void
+unlink(char *path)
+{
+    fprintf(stderr, "del file %s not yet supported", path);
+}
+int
+file_exist(char *path)
+{
+   FILE* fp = fopen(path, "r");
+   if(fp == NULL)
+     return 0;
+   fclose(fp);
+   return 1;
+}
+int is_dir(char *path)
+{
+   return 0;
+}
+#endif
+
 int
 dir_exist(char *path)
 {
+#ifdef MONA
+    if (path == NULL || *path == '\0')
+	return 0;
+    if(!file_exist(path))
+        return 0;
+    /* temp implementation. */
+    int len = strlen(path);
+    return path[len-1] == '/';
+#else
     struct stat stbuf;
 
     if (path == NULL || *path == '\0')
@@ -247,6 +281,7 @@ dir_exist(char *path)
     if (stat(path, &stbuf) == -1)
 	return 0;
     return IS_DIRECTORY(stbuf.st_mode);
+#endif
 }
 
 static int
@@ -344,6 +379,11 @@ uncompressed_file_type(char *path, char **ext)
 static int
 setModtime(char *path, time_t modtime)
 {
+#ifdef MONA
+    /* TODO: MONA file system support modified time? */
+    MONA_TRACE("not yet support modified time\n");
+    return 1;
+#else
     struct utimbuf t;
     struct stat st;
 
@@ -353,22 +393,34 @@ setModtime(char *path, time_t modtime)
 	t.actime = time(NULL);
     t.modtime = modtime;
     return utime(path, &t);
+#endif
 }
 
 void
 examineFile(char *path, URLFile *uf)
 {
+#ifndef MONA
     struct stat stbuf;
+#endif /* not MONA */
 
     uf->guess_type = NULL;
     if (path == NULL || *path == '\0' ||
-	stat(path, &stbuf) == -1 || NOT_REGULAR(stbuf.st_mode)) {
+#ifdef MONA
+        !file_exist(path)
+#else
+	stat(path, &stbuf) == -1 || NOT_REGULAR(stbuf.st_mode)
+#endif
+        ) {
 	uf->stream = NULL;
 	return;
     }
     uf->stream = openIS(path);
     if (!do_download) {
 	if (use_lessopen && getenv("LESSOPEN") != NULL) {
+#ifdef MONA
+            MONA_TRACE("MONA, I suppose never reached here\n");
+            return;
+#else /* not MONA */
 	    FILE *fp;
 	    uf->guess_type = guessContentType(path);
 	    if (uf->guess_type == NULL)
@@ -381,6 +433,7 @@ examineFile(char *path, URLFile *uf)
 		uf->guess_type = "text/plain";
 		return;
 	    }
+#endif
 	}
 	check_compression(path, uf);
 	if (uf->compression != CMP_NOCOMPRESS) {
@@ -399,6 +452,11 @@ examineFile(char *path, URLFile *uf)
 int
 check_command(char *cmd, int auxbin_p)
 {
+#ifdef MONA
+  /* no external command suuport now. */
+  MONA_TRACE("no external command support yet\n");
+  return 0;
+#else /* not MONA */
     static char *path = NULL;
     Str dirs;
     char *p, *np;
@@ -424,6 +482,7 @@ check_command(char *cmd, int auxbin_p)
 	    return 1;
     }
     return 0;
+#endif
 }
 
 char *
@@ -1510,6 +1569,12 @@ getAuthCookie(struct http_auth *hauth, char *auth_header,
 	      FormList *request,
 	      volatile Str *uname, volatile Str *pwd)
 {
+#ifdef MONA
+    MONA_TRACE("getAuthCookie, we should implement GUI version of this function.");
+    *uname = NULL;
+    *pwd = NULL;
+    return ;
+#else /* not MONA */
     Str ss = NULL;
     Str tmp;
     TextListItem *i;
@@ -1627,6 +1692,7 @@ getAuthCookie(struct http_auth *hauth, char *auth_header,
 	*pwd = NULL;
     }
     return;
+#endif /* not MONA */
 }
 
 static int
@@ -1729,10 +1795,16 @@ loadGeneralFile(char *path, ParsedURL *volatile current, char *referer,
 	switch (f.scheme) {
 	case SCM_LOCAL:
 	    {
+#ifdef MONA
+                if (!file_exist(pu.real_file))
+                    return NULL;
+                if (is_dir(pu.real_file)) {
+#else /* not MONA */
 		struct stat st;
 		if (stat(pu.real_file, &st) < 0)
 		    return NULL;
 		if (S_ISDIR(st.st_mode)) {
+#endif
 		    if (UseExternalDirBuffer) {
 			Str cmd = Sprintf("%s?dir=%s#current",
 					  DirBufferCommand, pu.file);
@@ -2118,9 +2190,11 @@ loadGeneralFile(char *path, ParsedURL *volatile current, char *referer,
 	if (DecodeCTE && IStype(f.stream) != IST_ENCODED)
 	    f.stream = newEncodedStream(f.stream, f.encoding);
 	if (pu.scheme == SCM_LOCAL) {
+#ifndef MONA
 	    struct stat st;
 	    if (PreserveTimestamp && !stat(pu.real_file, &st))
 		f.modtime = st.st_mtime;
+#endif /* not MONA */
 	    file = conv_from_system(guess_save_name(NULL, pu.real_file));
 	}
 	else
@@ -5229,6 +5303,7 @@ textlist_feed()
     return NULL;
 }
 
+int
 ex_efct(int ex)
 {
     int effect = 0;
@@ -7427,6 +7502,14 @@ static Buffer *
 loadcmdout(char *cmd,
 	   Buffer *(*loadproc) (URLFile *, Buffer *), Buffer *defaultbuf)
 {
+#ifdef MONA
+    if (cmd == NULL || *cmd == '\0')
+	return NULL;
+    MONA_TRACE("external cmd not support:(");
+    MONA_TRACE(cmd);
+    MONA_TRACE(")\n");
+    return NULL;
+#else
     FILE *f, *popen(const char *, const char *);
     Buffer *buf;
     URLFile uf;
@@ -7440,6 +7523,7 @@ loadcmdout(char *cmd,
     buf = loadproc(&uf, defaultbuf);
     UFclose(&uf);
     return buf;
+#endif
 }
 
 /* 
@@ -7465,6 +7549,10 @@ getshell(char *cmd)
 Buffer *
 getpipe(char *cmd)
 {
+#ifdef MONA
+    MONA_TRACE("get pipe not support\n");
+    return NULL;
+#else /* not MONA */
     FILE *f, *popen(const char *, const char *);
     Buffer *buf;
 
@@ -7483,6 +7571,7 @@ getpipe(char *cmd)
     buf->document_charset = WC_CES_US_ASCII;
 #endif
     return buf;
+#endif /* not MONA */
 }
 
 /* 
@@ -7880,8 +7969,13 @@ _MoveFile(char *path1, char *path2)
     if (f1 == NULL)
 	return -1;
     if (*path2 == '|' && PermitSaveToPipe) {
+#ifdef MONA
+        MONA_TRACE("pipe not yet supported\n");
+        return -1;
+#else
 	is_pipe = TRUE;
 	f2 = popen(path2 + 1, "w");
+#endif
     }
     else {
 	is_pipe = FALSE;
@@ -7899,9 +7993,11 @@ _MoveFile(char *path1, char *path2)
 	showProgress(&linelen, &trbyte);
     }
     ISclose(f1);
+#ifndef MONA
     if (is_pipe)
 	pclose(f2);
     else
+#endif
 	fclose(f2);
     return 0;
 }
@@ -7909,7 +8005,7 @@ _MoveFile(char *path1, char *path2)
 int
 _doFileCopy(char *tmpf, char *defstr, int download)
 {
-#ifndef __MINGW32_VERSION
+#if !defined(__MINGW32_VERSION) && !defined(MONA)
     Str msg;
     Str filen;
     char *p, *q = NULL;
@@ -8016,7 +8112,7 @@ _doFileCopy(char *tmpf, char *defstr, int download)
 	if (PreserveTimestamp && !is_pipe && !stat(tmpf, &st))
 	    setModtime(p, st.st_mtime);
     }
-#endif /* __MINGW32_VERSION */
+#endif /* __MINGW32_VERSION && MONA */
     return 0;
 }
 
@@ -8031,7 +8127,7 @@ doFileMove(char *tmpf, char *defstr)
 int
 doFileSave(URLFile uf, char *defstr)
 {
-#ifndef __MINGW32_VERSION
+#if !defined(__MINGW32_VERSION) && !defined(MONA)
     Str msg;
     Str filen;
     char *p, *q;
@@ -8128,13 +8224,16 @@ doFileSave(URLFile uf, char *defstr)
 	if (PreserveTimestamp && uf.modtime != -1)
 	    setModtime(p, uf.modtime);
     }
-#endif /* __MINGW32_VERSION */
+#endif /* __MINGW32_VERSION && MONA */
     return 0;
 }
 
 int
 checkCopyFile(char *path1, char *path2)
 {
+#ifdef MONA
+    return 0;
+#else
     struct stat st1, st2;
 
     if (*path2 == '|' && PermitSaveToPipe)
@@ -8143,11 +8242,15 @@ checkCopyFile(char *path1, char *path2)
 	if (st1.st_ino == st2.st_ino)
 	    return -1;
     return 0;
+#endif
 }
 
 int
 checkSaveFile(InputStream stream, char *path2)
 {
+#ifdef MONA
+    return 0;
+#else /* not MONA */
     struct stat st1, st2;
     int des = ISfileno(stream);
 
@@ -8159,11 +8262,16 @@ checkSaveFile(InputStream stream, char *path2)
 	if (st1.st_ino == st2.st_ino)
 	    return -1;
     return 0;
+#endif /* not MONA */
 }
 
 int
 checkOverWrite(char *path)
 {
+#ifdef MONA
+    MONA_TRACE("always overwrite now\n");
+    return 0;
+#else
     struct stat st;
     char *ans;
 
@@ -8175,6 +8283,7 @@ checkOverWrite(char *path)
 	return 0;
     else
 	return -1;
+#endif
 }
 
 char *
@@ -8199,7 +8308,7 @@ inputAnswer(char *prompt)
 static void
 uncompress_stream(URLFile *uf, char **src)
 {
-#ifndef __MINGW32_VERSION
+#if !defined(__MINGW32_VERSION) && !defined(MONA)
     pid_t pid1;
     FILE *f1;
     char *expand_cmd = GUNZIP_CMDNAME;
@@ -8283,12 +8392,16 @@ uncompress_stream(URLFile *uf, char **src)
     }
     UFhalfclose(uf);
     uf->stream = newFileStream(f1, (void (*)())fclose);
-#endif /* __MINGW32_VERSION */
+#endif /* __MINGW32_VERSION && MONA */
 }
 
 static FILE *
 lessopen_stream(char *path)
 {
+#ifdef MONA
+    MONA_TRACE("not support lessopen\n");
+    return NULL;
+#else /* not MONA */
     char *lessopen;
     FILE *fp;
 
@@ -8324,6 +8437,7 @@ lessopen_stream(char *path)
 	fp = NULL;
     }
     return fp;
+#endif
 }
 
 #if 0

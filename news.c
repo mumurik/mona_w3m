@@ -82,7 +82,11 @@ news_open(News * news)
     if (sock < 0)
 	goto open_err;
     news->rf = newInputStream(sock);
+#ifdef MONA
+    news->wf = NULL;
+#else
     news->wf = fdopen(dup(sock), "wb");
+#endif
     if (!news->rf || !news->wf)
 	goto open_err;
     IStype(news->rf) |= IST_UNCLOSE;

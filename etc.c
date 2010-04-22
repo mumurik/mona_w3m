@@ -1,6 +1,6 @@
 /* $Id: etc.c,v 1.81 2007/05/23 15:06:05 inu Exp $ */
 #include "fm.h"
-#ifndef __MINGW32_VERSION
+#if !defined(__MINGW32_VERSION) && !defined(MONA)
 #include <pwd.h>
 #endif
 #include "myctype.h"
@@ -8,7 +8,10 @@
 #include "local.h"
 #include "hash.h"
 
+#ifndef MONA
 #include <fcntl.h>
+#endif
+
 #include <sys/types.h>
 #include <time.h>
 #if defined(HAVE_WAITPID) || defined(HAVE_WAIT3)
@@ -20,6 +23,12 @@
 #define	read(a,b,c)	read_s(a,b,c)
 #define	close(x)	close_s(x)
 #endif				/* __WATT32__ */
+
+
+#ifdef MONA
+/* TODO: need to check */
+#define AI_CANONNAME 0
+#endif
 
 struct auth_pass {
     int bad;
@@ -1145,6 +1154,15 @@ parsePasswd(FILE * fp, int netrc)
 FILE *
 openSecretFile(char *fname)
 {
+#ifdef MONA
+    char *efname;
+    if (fname == NULL)
+	return NULL;
+    efname = expandPath(fname);
+    if (!file_exist(efname))
+	return NULL;
+    return fopen(efname, "r");
+#else /* not MONA */
     char *efname;
     struct stat st;
 
@@ -1179,6 +1197,7 @@ openSecretFile(char *fname)
     }
 
     return fopen(efname, "r");
+#endif /* not MONA */
 }
 
 void
@@ -1206,6 +1225,7 @@ loadPasswd(void)
 char *
 last_modified(Buffer *buf)
 {
+#ifndef MONA
     TextListItem *ti;
     struct stat st;
 
@@ -1222,6 +1242,7 @@ last_modified(Buffer *buf)
 	    return "unknown";
 	return ctime(&st.st_mtime);
     }
+#endif /* not MONA */
     return "unknown";
 }
 
@@ -1309,6 +1330,7 @@ romanAlphabet(int n)
 #define SIGIOT SIGABRT
 #endif				/* not SIGIOT */
 
+#ifndef MONA
 static void
 reset_signals(void)
 {
@@ -1333,11 +1355,13 @@ reset_signals(void)
     mySignal(SIGPIPE, SIG_IGN);
 #endif
 }
+#endif /* not MONA */
 
 #ifndef FOPEN_MAX
 #define FOPEN_MAX 1024		/* XXX */
 #endif
 
+#ifndef MONA
 static void
 close_all_fds_except(int i, int f)
 {
@@ -1355,10 +1379,14 @@ close_all_fds_except(int i, int f)
 	    close(i);
     }
 }
+#endif
 
 void
 setup_child(int child, int i, int f)
 {
+#ifdef MONA
+    MONA_TRACE("setup child do nothing for mona. I sppose never called this function\n");
+#else /* not MONA */
     reset_signals();
     mySignal(SIGINT, SIG_IGN);
 #ifndef __MINGW32_VERSION
@@ -1367,12 +1395,13 @@ setup_child(int child, int i, int f)
 #endif /* __MINGW32_VERSION */
     close_tty();
     close_all_fds_except(i, f);
+#endif /* not MONA */
     QuietMessage = TRUE;
     fmInitialized = FALSE;
     TrapSignal = FALSE;
 }
 
-#ifndef __MINGW32_VERSION
+#if !defined(__MINGW32_VERSION) && !defined(MONA)
 pid_t
 open_pipe_rw(FILE ** fr, FILE ** fw)
 {
@@ -1430,19 +1459,30 @@ open_pipe_rw(FILE ** fr, FILE ** fw)
   err0:
     return (pid_t) - 1;
 }
-#endif /* __MINGW32_VERSION */
+#endif /* __MINGW32_VERSION && MONA */
 
 void
 myExec(char *command)
 {
+#ifdef MONA
+    MONA_TRACE("not support exec (");
+    MONA_TRACE(command);
+    MONA_TRACE(")\n");
+#else /* not MONA */
     mySignal(SIGINT, SIG_DFL);
     execl("/bin/sh", "sh", "-c", command, NULL);
     exit(127);
+#endif
 }
 
 void
 mySystem(char *command, int background)
 {
+#ifdef MONA
+     MONA_TRACE("not support system call (");
+     MONA_TRACE(command);
+     MONA_TRACE(")\n");
+#else /* not MONA */
 #ifndef __MINGW32_VERSION
     if (background) {
 #ifndef __EMX__
@@ -1460,6 +1500,7 @@ mySystem(char *command, int background)
     else
 #endif /* __MINGW32_VERSION */
 	system(command);
+#endif /* not MONA */
 }
 
 Str
@@ -1535,6 +1576,13 @@ expandName(char *name)
     return getenv("HOME");
 }
 #else
+#ifdef MONA
+char *
+expandName(char *name)
+{
+    return "/";
+}
+#else /* not MONA */
 char *
 expandName(char *name)
 {
@@ -1578,7 +1626,8 @@ expandName(char *name)
   rest:
     return name;
 }
-#endif
+#endif /* not MONA */
+#endif /* not __MINGW32_VERSION */
 
 char *
 file_to_url(char *file)
@@ -1914,24 +1963,28 @@ mymktime(char *timestr)
 		     (hour * 60 * 60) + (min * 60) + sec);
 }
 
+
 #ifdef USE_COOKIE
-#ifdef INET6
+#if defined(INET6) || defined(MONA)
 #include <sys/socket.h>
-#endif				/* INET6 */
+#endif				/* INET6 || MONA*/
 #ifndef __MINGW32_VERSION
 #include <netdb.h>
 #else
 #include <winsock.h>
 #endif
+
+
+
 char *
 FQDN(char *host)
 {
     char *p;
-#ifndef INET6
+#if !defined(INET6) && !defined(MONA)
     struct hostent *entry;
-#else				/* INET6 */
+#else				/* INET6 || MONA */
     int *af;
-#endif				/* INET6 */
+#endif				/* INET6 || MONA*/
 
     if (host == NULL)
 	return NULL;
@@ -1944,12 +1997,12 @@ FQDN(char *host)
     if (*p == '.')
 	return host;
 
-#ifndef INET6
+#if !defined(INET6) && !defined(MONA)
     if (!(entry = gethostbyname(host)))
 	return NULL;
 
     return allocStr(entry->h_name, -1);
-#else				/* INET6 */
+#else				/* INET6 || MONA */
     for (af = ai_family_order_table[DNS_order];; af++) {
 	int error;
 	struct addrinfo hints;
@@ -1990,6 +2043,10 @@ FQDN(char *host)
 #endif				/* USE_COOKIE */
 
 void (*mySignal(int signal_number, void (*action) (int))) (int) {
+#ifdef MONA
+    MONA_TRACE("do not support mySginal yet\n");
+    return NULL;
+#else /* not MONA */
 #ifdef	SA_RESTART
     struct sigaction new_action, old_action;
 
@@ -2010,4 +2067,5 @@ void (*mySignal(int signal_number, void (*action) (int))) (int) {
 #else
     return (signal(signal_number, action));
 #endif
+#endif /* not MONA */
 }

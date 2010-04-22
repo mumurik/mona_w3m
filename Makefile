@@ -4,18 +4,22 @@
 #
 
 #mumurik begin add
-TARGET  = MONAFILE
-# SOURCES = FileManager.cpp FileWindow.cpp FileBrowser.cpp Icon.cpp
+TARGET  = W3M
 INSTDIR = $(BINDIR)/APPS/W3M/$(TARGET).APP
 INSTFILES  = ICONS.BM5
 CLEANFILES = $(INSTFILES)
+MONADIR=../../mona
+SHAREDIR   = $(MONADIR)/share
 include Makefile.boehm_gc.inc
+AWK=awk
+
+
 #mumurik end add
 
-SHELL=/bin/sh
+# SHELL=/bin/sh
 PACKAGE = w3m
 VERSION = 0.5.2
-DOMAIN = $(PACKAGE)
+# DOMAIN = $(PACKAGE)
 prefix = /usr/local
 exec_prefix = ${prefix}
 datarootdir = ${prefix}/share
@@ -38,14 +42,17 @@ top_builddir = .
 VPATH = $(top_srcdir):.
 DESTDIR = 
 
-CGIBIN_DIR = $(libexecdir)/$(PACKAGE)/cgi-bin
-AUXBIN_DIR = $(libexecdir)/$(PACKAGE)
-HELP_DIR = ${datarootdir}/w3m
-RC_DIR = ~/.w3m
-ETC_DIR = $(sysconfdir)
-CONF_DIR = $(sysconfdir)/$(PACKAGE)
+MONAAPP_PATH=/APPS/W3M
 
-CFLAGS = $(OPTS) -I. -I$(top_srcdir) -g -O2 -I$(srcdir)/libwc $(CPPFLAGS) $(DEFS) $(GC_CFLAGS) 
+CGIBIN_DIR = $(MONAAPP_PATH)
+AUXBIN_DIR = $(MONAAPP_PATH)
+HELP_DIR = $(MONAAPP_PATH)
+RC_DIR = $(MONAAPP_PATH)
+ETC_DIR = $(MONAAPP_PATH)
+CONF_DIR = $(MONAAPP_PATH)
+LOCALE_DIR = $(MONAAPP_PATH)
+
+# mumurik CFLAGS = $(OPTS) -I. -I$(top_srcdir) -g -O2 -I$(srcdir)/libwc $(CPPFLAGS) $(DEFS) $(GC_CFLAGS) 
 # mumurik WCCFLAGS = -DUSE_UNICODE -I$(srcdir) -I$(srcdir)/..
 WCCFLAGS =
 CPPFLAGS = 
@@ -53,10 +60,10 @@ DEFS = -DHAVE_CONFIG_H -DAUXBIN_DIR=\"$(AUXBIN_DIR)\" \
 	-DCGIBIN_DIR=\"$(CGIBIN_DIR)\" -DHELP_DIR=\"$(HELP_DIR)\" \
 	-DETC_DIR=\"$(ETC_DIR)\" -DCONF_DIR=\"$(CONF_DIR)\" \
 	-DRC_DIR=\"$(RC_DIR)\" \
-        -DLOCALEDIR=\"$(localedir)\"
-LDFLAGS =  -L../../mona/core/scheme/BoehmGC/gc-7.0//lib
+        -DLOCALEDIR=\"$(LOCALE_DIR)\"
+#LDFLAGS =  -L../../mona/core/scheme/BoehmGC/gc-7.0//lib
 LIBS = 
-EXT_LIBS = -L. -lindep  -L../../mona/core/scheme/BoehmGC/gc-7.0//lib
+#EXT_LIBS = -L. -lindep  -L../../mona/core/scheme/BoehmGC/gc-7.0//lib
 #mumurik -lgc
 #mumurik W3M_LIBS =  -L./libwc -lwc
 W3M_LIBS = 
@@ -64,14 +71,6 @@ W3M_LIBS =
 WCTARGET = 
 NLSTARGET = 
 
-#mumurik begin add
-CXXFLAGS = -O3 -g -idirafter . -Wall $(GC_CFLAGS) -mno-stack-arg-probe # -g -finstrument-functions #-DMACRO_TRACE -pg 
-
-.SUFFIXES: .cpp .o
-.cpp.o:
-	$(CXX) -g $(CXXFLAGS) $(INCLUDE) -c $< -o $@
-
-#mumurik end add
 
 MAKE_ARGS = PERL='$(PERL)' MKDIR='$(MKDIR)' \
 	BIN_DIR='$(bindir)' AUXBIN_DIR='$(AUXBIN_DIR)' \
@@ -83,21 +82,21 @@ MAKE_ARGS = PERL='$(PERL)' MKDIR='$(MKDIR)' \
 IMGCFLAGS =  
 IMGLDFLAGS =  
 
-CC0 = gcc
-CC =  $(CC0)
-CPP = gcc -E
-RANLIB=ranlib
-AWK = gawk
-PERL = /usr/local/bin/perl
-MKDIR=mkdir -p
-MV=mv
-RM=rm
-AR=ar
-INSTALL=/bin/install -c
-INSTALL_PROGRAM=${INSTALL}
-INSTALL_SCRIPT=${INSTALL}
-INSTALL_DATA=${INSTALL} -m 644
-INSTALL_W3MIMGDISPLAY=${INSTALL_PROGRAM}
+#CC0 = gcc
+#CC =  $(CC0)
+#CPP = gcc -E
+#RANLIB=ranlib
+#AWK = gawk
+#PERL = /usr/local/bin/perl
+#MKDIR=mkdir -p
+#MV=mv
+#RM=rm
+#AR=ar
+#INSTALL=/bin/install -c
+#INSTALL_PROGRAM=${INSTALL}
+#INSTALL_SCRIPT=${INSTALL}
+#INSTALL_DATA=${INSTALL} -m 644
+#INSTALL_W3MIMGDISPLAY=${INSTALL_PROGRAM}
 
 HELP_FILE = w3mhelp-w3m_en.html
 KEYBIND_SRC = keybind.c
@@ -108,24 +107,50 @@ MODEL=-EN
 
 
 
-SRCS=main.c file.c buffer.c display.c etc.c search.c linein.c table.c local.c \
-	form.c map.c frame.c rc.c menu.c mailcap.c image.c \
-	symbol.c entity.c terms.c url.c ftp.c mimehead.c regex.c news.c \
-	func.c cookie.c history.c backend.c $(KEYBIND_SRC)
-OBJS=main.o file.o buffer.o display.o etc.o search.o linein.o table.o local.o\
+#SRCS=main_mona.cpp file.c buffer.c display.c etc.c search.c linein.c table.c local.c \
+#	form.c map.c frame.c rc.c menu.c mailcap.c image.c \
+#	symbol.c entity.c terms_mona.c url.c ftp.c mimehead.c regex.c news.c \
+#	func.c cookie.c history.c backend.c $(KEYBIND_SRC)
+
+CPPOBJS=main_mona.o terms_mona.o
+OBJS=file.o buffer.o display.o etc.o search.o linein.o table.o local.o\
 	form.o map.o frame.o rc.o menu.o mailcap.o image.o \
-	symbol.o entity.o terms.o url.o ftp.o mimehead.o regex.o news.o \
-	func.o cookie.o history.o backend.o $(KEYBIND_OBJ) $(GC_OBJECTS)
+	symbol.o entity.o url.o ftp.o mimehead.o regex.o news.o \
+	func.o cookie.o history.o backend.o $(KEYBIND_OBJ)
 LSRCS=anchor.c parsetagx.c tagtable.c istream.c
 LOBJS=anchor.o parsetagx.o tagtable.o istream.o
 LLOBJS=version.o
 ALIBOBJS=Str.o indep.o regex.o textlist.o parsetag.o myctype.o hash.o $(GC_OBJECTS)
 ALIB=libindep.a
-ALLOBJS=$(OBJS) $(LOBJS) $(LLOBJS)
+ALLCOBJS=$(OBJS) $(LOBJS) $(LLOBJS)
+ALLOBJS=$(CPPOBJS) $(ALLCOBJS)
 
-EXT=.exe
 
-TARGET=$(PACKAGE)$(EXT)
+#mumurik add begin
+SOURCES=$(CPPOBJS:.o=.c)
+CSOURCES=$(ALLCOBJS:.o=.c)
+OBJECTS=$(ALLOBJS)
+
+ifneq ($(BUILD_TARGET),ELF)
+ADDLINK    =  -lmonalibc-imp -lbaygui-imp -lindep.a --enable-auto-import
+ADDLINKDEP = $(MONADIR)/lib/libbaygui-imp.a $(MONADIR)/lib/libmonalibc-imp.a libindep.a
+include $(SHAREDIR)/configs/monapi-ex5.inc
+else
+ADDLINK    = -lbaygui-imp -lmonalibc-imp -lmonapi-imp -lindep.a
+ADDLINKDEP = $(MONADIR)/lib/libbaygui.a $(MONADIR)/lib/libmonalibc.a libindep.a
+include $(SHAREDIR)/configs/monapi-el5.inc
+endif
+
+#CXXFLAGS = -O3 -g -idirafter . -Wall $(GC_CFLAGS) -mno-stack-arg-probe # -g -finstrument-functions #-DMACRO_TRACE -pg 
+CXXFLAGS += $(GC_CFLAGS) -g -idirafter -mno-stack-arg-probe -DMONA
+CFLAGS   += $(DEFS) $(GC_CFLAGS) -g -idirafter -mno-stack-arg-probe -DMONA -I./
+
+#mumurik end add
+
+
+#mumurik EXT=.exe
+
+#TARGET=$(PACKAGE)$(EXT)
 BOOKMARKER=w3mbookmark$(EXT)
 HELPER=w3mhelperpanel$(EXT)
 INFLATE=inflate$(EXT)
@@ -146,10 +171,14 @@ SCRIPTSUBDIRS= scripts
 SUBDIRS = $(SCRIPTSUBDIRS) w3mimg libwc po
 .PHONY: $(SUBDIRS)
 
-all: $(TARGETS) all-scripts $(NLSTARGET)
+#mumurik add begin
+#$(TARGET).EXE: $(INSTFILES) $(ALIB) $(WCTARGET)
+#mumurik add end
 
-$(TARGET): $(ALLOBJS) $(ALIB) $(WCTARGET)
-	$(CC) $(CFLAGS) -o $(TARGET) $(ALLOBJS) $(LDFLAGS) $(LIBS) $(EXT_LIBS) $(W3M_LIBS)
+#all: $(TARGETS) all-scripts $(NLSTARGET)
+
+#$(TARGET): $(ALLOBJS) $(ALIB) $(WCTARGET)
+#	$(CC) $(CFLAGS) -o $(TARGET) $(ALLOBJS) $(LDFLAGS) $(LIBS) $(EXT_LIBS) $(W3M_LIBS)
 
 $(ALIB): $(ALIBOBJS)
 	$(AR) rv $(ALIB) $(ALIBOBJS)
@@ -157,7 +186,9 @@ $(ALIB): $(ALIBOBJS)
 
 $(OBJS) $(LOBJS): fm.h funcname1.h
 
-tagtable.c: tagtable.tab mktable$(EXT) html.h 
+#mumurik tagtable.c: tagtable.tab mktable$(EXT) html.h 
+
+tagtable.c: tagtable.tab html.h 
 	./mktable$(EXT) 100 $(srcdir)/tagtable.tab > $@
 
 indep.o: indep.c fm.h funcname1.h
@@ -189,7 +220,9 @@ funcname1.h: funcname.tab
 funcname2.h: funcname.tab
 	sort funcname.tab | $(AWK) -f $(top_srcdir)/funcname2.awk > $@
 
-functable.c: funcname.tab mktable$(EXT)
+# mumurik functable.c: funcname.tab mktable$(EXT)
+
+functable.c: funcname.tab
 	sort funcname.tab | $(AWK) -f $(top_srcdir)/functable.awk > functable.tab
 	./mktable$(EXT) 100 functable.tab > $@
 	-rm -f functable.tab
@@ -229,57 +262,60 @@ w3mimg:
 po:
 	(cd $@ && $(MAKE))
 
-install: install-core install-scripts install-po
+#install: install-core install-scripts install-po
 
-install-core: $(TARGETS)
-	-$(MKDIR) $(DESTDIR)$(bindir)
-	-$(MKDIR) $(DESTDIR)$(AUXBIN_DIR)
-	-$(MKDIR) $(DESTDIR)$(CGIBIN_DIR)
-	-$(MKDIR) $(DESTDIR)$(HELP_DIR)
-	-$(MKDIR) $(DESTDIR)$(mandir)/man1
-	-$(MKDIR) $(DESTDIR)$(mandir)/ja/man1
-	$(INSTALL_PROGRAM) $(TARGET) $(DESTDIR)$(bindir)/$(TARGET)
-	$(INSTALL_DATA) $(HELP_FILE) $(DESTDIR)$(HELP_DIR)/$(HELP_TARGET)
-	$(INSTALL_DATA) $(MAN1) $(DESTDIR)$(mandir)/man1/$(MAN1_TARGET)
-	$(INSTALL_DATA) $(MAN1_JA) $(DESTDIR)$(mandir)/ja/man1/$(MAN1_TARGET)
-	targets="$(AUXBIN_TARGETS)"; for file in $$targets; \
-	do \
-		case $$file in \
-		$(IMGDISPLAY)) $(INSTALL_W3MIMGDISPLAY) $$file \
-			$(DESTDIR)$(AUXBIN_DIR)/$$file;; \
-		*) $(INSTALL_PROGRAM) $$file $(DESTDIR)$(AUXBIN_DIR)/$$file;; \
-		esac; \
-	done
-	for file in $(LIB_TARGETS); \
-	do \
-		$(INSTALL_PROGRAM) $$file $(DESTDIR)$(CGIBIN_DIR)/$$file; \
-	done
+#install-core: $(TARGETS)
+#	-$(MKDIR) $(DESTDIR)$(bindir)
+#	-$(MKDIR) $(DESTDIR)$(AUXBIN_DIR)
+#	-$(MKDIR) $(DESTDIR)$(CGIBIN_DIR)
+#	-$(MKDIR) $(DESTDIR)$(HELP_DIR)
+#	-$(MKDIR) $(DESTDIR)$(mandir)/man1
+#	-$(MKDIR) $(DESTDIR)$(mandir)/ja/man1
+#	$(INSTALL_PROGRAM) $(TARGET) $(DESTDIR)$(bindir)/$(TARGET)
+#	$(INSTALL_DATA) $(HELP_FILE) $(DESTDIR)$(HELP_DIR)/$(HELP_TARGET)
+#	$(INSTALL_DATA) $(MAN1) $(DESTDIR)$(mandir)/man1/$(MAN1_TARGET)
+#	$(INSTALL_DATA) $(MAN1_JA) $(DESTDIR)$(mandir)/ja/man1/$(MAN1_TARGET)
+#	targets="$(AUXBIN_TARGETS)"; for file in $$targets; \
+#	do \
+#		case $$file in \
+#		$(IMGDISPLAY)) $(INSTALL_W3MIMGDISPLAY) $$file \
+#			$(DESTDIR)$(AUXBIN_DIR)/$$file;; \
+#		*) $(INSTALL_PROGRAM) $$file $(DESTDIR)$(AUXBIN_DIR)/$$file;; \
+#		esac; \
+#	done
+#	for file in $(LIB_TARGETS); \
+#	do \
+#		$(INSTALL_PROGRAM) $$file $(DESTDIR)$(CGIBIN_DIR)/$$file; \
+#	done
 
-install-helpfile:
-	-$(MKDIR) $(DESTDIR)$(HELP_DIR)
-	for file in $(HELP_ALLFILES); \
-	do \
-		$(INSTALL_DATA) $$file $(DESTDIR)$(HELP_DIR)/$$file; \
-	done
+#install-helpfile:
+#	-$(MKDIR) $(DESTDIR)$(HELP_DIR)
+#	for file in $(HELP_ALLFILES); \
+#	do \
+#		$(INSTALL_DATA) $$file $(DESTDIR)$(HELP_DIR)/$$file; \
+#	done
 
-install-po:
-	NLSTARGET="$(NLSTARGET)"; for subdir in $$NLSTARGET; \
-	do \
-	 (cd $$subdir && $(MAKE) install); \
-	done
+#install-po:
+#	NLSTARGET="$(NLSTARGET)"; for subdir in $$NLSTARGET; \
+#	do \
+#	 (cd $$subdir && $(MAKE) install); \
+#	done
 
-all-scripts:
-	for dir in $(SCRIPTSUBDIRS);	\
-	do	\
-		(cd $$dir && $(MAKE) $(MAKE_ARGS)); \
-	done
+#all-scripts:
+#	for dir in $(SCRIPTSUBDIRS);	\
+#	do	\
+#		(cd $$dir && $(MAKE) $(MAKE_ARGS)); \
+#	done
 
-install-scripts: all-scripts
-	topdir=`pwd`; \
-	for dir in $(SCRIPTSUBDIRS);	\
-	do	\
-		(cd $$dir && $(MAKE) $(MAKE_ARGS) install); \
-	done
+ICONS.BM5: icons.bmp
+	bim2bin in:$< out:$@ -osacmp -tek5 BS:0 eprm:z0
+
+#install-scripts: all-scripts
+#	topdir=`pwd`; \
+#	for dir in $(SCRIPTSUBDIRS);	\
+#	do	\
+#		(cd $$dir && $(MAKE) $(MAKE_ARGS) install); \
+#	done
 
 uninstall:
 	-$(RM) $(bindir)/$(TARGET)
@@ -303,18 +339,18 @@ uninstall:
 		(cd $$dir && $(MAKE) $(MAKE_ARGS) uninstall); \
 	done
 
-clean: sweep
-	-$(RM) -f *.o *.a $(TARGETS) mktable$(EXT)
-	-$(RM) -f funcname.tab
-	-$(RM) -f funcname.c funcname1.h funcname2.h tagtable.c functable.c
-	-for dir in w3mimg libwc; \
-	do \
-		(cd $$dir && $(MAKE) clean RM="$(RM)"); \
-	done
-	-for dir in $(SCRIPTSUBDIRS);	\
-	do	\
-		(cd $$dir && $(MAKE) clean); \
-	done
+#clean: sweep
+#mumurik	-$(RM) -f *.o *.a $(TARGETS) mktable$(EXT)
+#mumurik	-$(RM) -f funcname.tab
+#mumurik	-$(RM) -f funcname.c funcname1.h funcname2.h tagtable.c functable.c
+#	-for dir in w3mimg libwc; \
+#	do \
+#		(cd $$dir && $(MAKE) clean RM="$(RM)"); \
+#	done
+#	-for dir in $(SCRIPTSUBDIRS);	\
+#	do	\
+#		(cd $$dir && $(MAKE) clean); \
+#	done
 
 distclean: clean
 	for subdir in po scripts w3mimg libwc; \
@@ -332,8 +368,8 @@ distclean: clean
 sweep:
 	-$(RM) -f core *~ *.bak *.orig *.rej
 
-depend: 
-	makedepend $(CFLAGS) *.c
+#depend: 
+#	makedepend $(CFLAGS) *.c
 
 dist:
 	cd ..; tar cvfz w3m-$(VERSION).tar.gz w3m
@@ -341,3 +377,4 @@ dist:
 bindist:
 	cd ..; tar cvfz w3m-$(VERSION)-$(MODEL).tar.gz w3m/w3m* w3m/doc* w3m/Bonus* w3m/README w3m/scripts 
 
+-include dependencies

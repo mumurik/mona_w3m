@@ -89,6 +89,38 @@ init_str_stream(BaseStream base, Str s)
     init_buffer(base, s->ptr, s->length);
 }
 
+#ifdef MONA
+static int
+basic_fread(int *handle, char *buf, int len)
+{
+  FILE* fp = (FILE*)handle
+  return fread(buf, len, fp); 
+}
+static void
+basic_fclose(int *handle)
+{
+   FILE* fp = (FILE*)handle;
+   fclose(fp);
+}
+
+InputStream
+newInputStreamFopen(const char* path, const char *mode)
+{
+    InputStream stream;
+    FILE* fp = fopen(path, mode);
+    if (fp == NULL)
+	return NULL;
+    stream = New(union input_stream);
+    init_base_stream(&stream->base, STREAM_BUF_SIZE);
+    stream->base.type = IST_BASIC;
+    stream->base.handle = New(int);
+    *(int *)stream->base.handle = (int*)fp;
+    stream->base.read = (int (*)())basic_fread;
+    stream->base.close = (void (*)())basic_fclose;
+    return stream;
+}
+#endif
+
 InputStream
 newInputStream(int des)
 {

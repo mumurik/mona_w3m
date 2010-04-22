@@ -4,7 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#ifndef MONA
 #include <sys/stat.h>
+#endif
 #include <signal.h>
 #include <errno.h>
 #ifdef HAVE_READLINK
@@ -44,8 +46,23 @@ writeLocalCookie()
     localCookie();
     fwrite(Local_cookie->ptr, sizeof(char), Local_cookie->length, f);
     fclose(f);
+#ifndef MONA
     chmod(Local_cookie_file, S_IRUSR | S_IWUSR);
+#endif
 }
+
+#ifdef MONA
+/* tekito- */
+static void
+gethostname(char *out_buf, int buf_len)
+{
+    if(buf_len < sizeof("MONA")) {
+        MONA_TRACE("never reached here");
+        return;
+    }
+    sprintf(out_buf, "MONA");
+}
+#endif
 
 /* setup cookie for local CGI */
 Str
@@ -67,7 +84,9 @@ loadLocalDir(char *dname)
     Str tmp;
     DIR *d;
     Directory *dir;
+#ifndef MONA
     struct stat st;
+#endif
     char **flist;
     char *p, *qdir;
     Str fbuf = Strnew();
@@ -131,7 +150,11 @@ loadLocalDir(char *dname)
 	if (lstat(fbuf->ptr, &lst) < 0)
 	    continue;
 #endif				/* HAVE_LSTAT */
+#ifdef MONA
+        if (!file_exist(fbuf->ptr))
+#else
 	if (stat(fbuf->ptr, &st) < 0)
+#endif
 	    continue;
 	if (multicolList) {
 	    if (n == 1)
@@ -143,16 +166,28 @@ loadLocalDir(char *dname)
 		Strcat_charp(tmp, "[LINK] ");
 	    else
 #endif				/* HAVE_LSTAT */
+#ifdef MONA
+	    if (is_dir(fbuf->ptr))
+#else
 	    if (S_ISDIR(st.st_mode))
+#endif
 		Strcat_charp(tmp, "[DIR]&nbsp; ");
 	    else
 		Strcat_charp(tmp, "[FILE] ");
 	}
 	Strcat_m_charp(tmp, "<A HREF=\"", html_quote(file_quote(p)), NULL);
+#ifdef MONA
+        if (is_dir(fbuf->ptr))
+#else
 	if (S_ISDIR(st.st_mode))
+#endif
 	    Strcat_char(tmp, '/');
 	Strcat_m_charp(tmp, "\">", html_quote(conv_from_system(p)), NULL);
+#ifdef MONA
+        if (is_dir(fbuf->ptr))
+#else
 	if (S_ISDIR(st.st_mode))
+#endif
 	    Strcat_char(tmp, '/');
 	Strcat_charp(tmp, "</A>");
 	if (multicolList) {
@@ -190,10 +225,18 @@ loadLocalDir(char *dname)
 static int
 check_local_cgi(char *file, int status)
 {
+#ifndef MONA
     struct stat st;
+#endif
 
     if (status != CGIFN_LIBDIR && status != CGIFN_CGIBIN)
 	return -1;
+#ifdef MONA
+    if (!file_exist(file))
+	return -1;
+    if (is_dir(file))
+	return -1;
+#else
     if (stat(file, &st) < 0)
 	return -1;
     if (S_ISDIR(st.st_mode))
@@ -202,6 +245,7 @@ check_local_cgi(char *file, int status)
     if ((st.st_uid == geteuid() && (st.st_mode & S_IXUSR)) || (st.st_gid == getegid() && (st.st_mode & S_IXGRP)) || (st.st_mode & S_IXOTH))	/* executable */
 	return 0;
 #endif
+#endif /* not MONA */
     return -1;
 }
 
@@ -278,14 +322,20 @@ checkPath(char *fn, char *path)
 {
     char *p;
     Str tmp;
+#ifndef MONA
     struct stat st;
+#endif
     while (*path) {
 	p = strchr(path, ':');
 	tmp = Strnew_charp(expandPath(p ? allocStr(path, p - path) : path));
 	if (Strlastchar(tmp) != '/')
 	    Strcat_char(tmp, '/');
 	Strcat_charp(tmp, fn);
+#ifdef MONA
+	if (file_exist(tmp->ptr))
+#else
 	if (stat(tmp->ptr, &st) == 0)
+#endif
 	    return tmp;
 	if (!p)
 	    break;

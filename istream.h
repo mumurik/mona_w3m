@@ -10,8 +10,11 @@
 #endif
 #include "Str.h"
 #include <sys/types.h>
+
+#ifndef MONA
 #include <sys/stat.h>
 #include <fcntl.h>
+#endif
 
 struct stream_buffer {
     unsigned char *buf;
@@ -147,9 +150,19 @@ extern Str ssl_get_certificate(SSL * ssl, char *hostname);
 #define ssl_of(stream) ((stream)->ssl.handle->ssl)
 #endif
 
+#ifdef MONA
+extern InputStream newInputStreamFopen(const char* path, const char *mode);
+#ifdef USE_BINMODE_STREAM
+#define openIS(path) newInputStreamFopen((path),"rw")
+#else
+#define openIS(path) newInputStreamFopen((path),"r")
+#endif				/* USE_BINMODE_STREAM */
+#else /* not MONA */
+
 #ifdef USE_BINMODE_STREAM
 #define openIS(path) newInputStream(open((path),O_RDONLY|O_BINARY))
 #else
 #define openIS(path) newInputStream(open((path),O_RDONLY))
 #endif				/* USE_BINMODE_STREAM */
+#endif /* not MONA */
 #endif

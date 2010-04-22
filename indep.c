@@ -1,10 +1,12 @@
 /* $Id: indep.c,v 1.38 2007/05/23 15:06:05 inu Exp $ */
 #include "fm.h"
 #include <stdio.h>
-#ifndef __MINGW32_VERSION
+#if !defined(__MINGW32_VERSION) && !defined(MONA)
 #include <pwd.h>
-#endif /* __MINGW32_VERSION */
+#endif /* !__MINGW32_VERSION  && !MONA */
+#ifndef MONA
 #include <sys/param.h>
+#endif
 #include <sys/types.h>
 #include <stdlib.h>
 #include "indep.h"
@@ -136,6 +138,12 @@ currentdir()
     path = NewAtom_N(char, 1024);
     getwd(path);
 #else				/* not HAVE_GETWD */
+#ifdef MONA
+    /* temporary return root path. */
+    path = NewAtom_N(char, 1024);
+    path[0] = '/';
+    path[1] = '\0';
+#else /* not MONA */
     FILE *f;
     char *p;
     path = NewAtom_N(char, 1024);
@@ -147,6 +155,7 @@ currentdir()
 	    *p = '\0';
 	    break;
 	}
+#endif /* not MONA */
 #endif				/* not HAVE_GETWD */
 #endif				/* not HAVE_GETCWD */
     return path;
@@ -227,7 +236,8 @@ expandPath(char *name)
     p = name;
     if (*p == '~') {
 	p++;
-#ifndef __MINGW32_VERSION
+/* #ifndef __MINGW32_VERSION */
+#if !defined(__MINGW32_VERSION) && !defined(MONA)
 	if (IS_ALPHA(*p)) {
 	    char *q = strchr(p, '/');
 	    if (q) {		/* ~user/dir... */

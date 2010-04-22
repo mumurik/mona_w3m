@@ -714,6 +714,10 @@ _rdcompl(void)
 static void
 next_dcompl(int next)
 {
+#ifdef MONA
+    MONA_TRACE("next_dcompl. completion yet do nothing\n");
+    return;
+#else
     static int col, row, len;
     static Str d;
     int i, j, n, y;
@@ -842,6 +846,7 @@ next_dcompl(int next)
 	    addstr("----- Press CTRL-D to continue -----");
 	boldend();
     }
+#endif
 }
 
 
@@ -894,6 +899,15 @@ unescape_spaces(Str s)
 static Str
 doComplete(Str ifn, int *status, int next)
 {
+#ifdef MONA
+    {
+	    CompleteBuf = Strdup(ifn);
+	    *status = CPL_FAIL;
+	    if (cm_mode & CPL_ON)
+		CompleteBuf = escape_spaces(CompleteBuf);
+	    return CompleteBuf;
+    }
+#else /* not MONA */
     int fl, i;
     char *fn, *p;
     DIR *d;
@@ -1004,6 +1018,7 @@ doComplete(Str ifn, int *status, int next)
     if (cm_mode & CPL_ON)
 	CompleteBuf = escape_spaces(CompleteBuf);
     return Str_conv_from_system(CompleteBuf);
+#endif /* not MONA */
 }
 
 static void

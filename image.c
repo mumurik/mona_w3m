@@ -2,7 +2,9 @@
 
 #include "fm.h"
 #include <sys/types.h>
+#ifndef MONA
 #include <sys/stat.h>
+#endif
 #include <signal.h>
 #include <errno.h>
 #include <unistd.h>

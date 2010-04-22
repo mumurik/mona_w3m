@@ -565,6 +565,10 @@ form_fputs_decode(Str s, FILE * f)
 void
 input_textarea(FormItemList *fi)
 {
+#ifdef MONA
+    MONA_TRACE("input not yet supported\n");
+    return;
+#else
     char *tmpf = tmpfname(TMPF_DFL, NULL)->ptr;
     Str tmp;
     FILE *f;
@@ -619,6 +623,7 @@ input_textarea(FormItemList *fi)
     fclose(f);
   input_end:
     unlink(tmpf);
+#endif /* not MONA */
 }
 
 void
@@ -740,7 +745,9 @@ form_write_from_file(FILE * f, char *boundary, char *name, char *filename,
 		     char *file)
 {
     FILE *fd;
+#ifndef MONA
     struct stat st;
+#endif
     int c;
     char *type;
 
@@ -752,10 +759,15 @@ form_write_from_file(FILE * f, char *boundary, char *name, char *filename,
     fprintf(f, "Content-Type: %s\r\n\r\n",
 	    type ? type : "application/octet-stream");
 
+#ifdef MONA
+    if (!file_exist(file) || is_dir(file))
+	goto write_end;
+#else
     if (lstat(file, &st) < 0)
 	goto write_end;
     if (S_ISDIR(st.st_mode))
 	goto write_end;
+#endif
     fd = fopen(file, "r");
     if (fd != NULL) {
 	while ((c = fgetc(fd)) != EOF)

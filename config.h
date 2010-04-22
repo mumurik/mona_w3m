@@ -8,7 +8,7 @@
 #define EN 1
 
 /* Name of package */
-#define PACKAGE "w3m"
+/* defined at command line #define PACKAGE "w3m" */
 
 #define HELP_FILE "w3mhelp-w3m_en.html"
 #define HELP_CGI     "w3mhelp"
@@ -72,7 +72,8 @@
 #define USE_NNTP 1
 /* #undef USE_GOPHER */
 /* #undef USE_ALARM */
-#define USE_IMAGE 1
+/* #define USE_IMAGE 1 */
+#undef USE_IMAGE
 /* #undef USE_W3MIMG_X11 */
 /* #undef USE_W3MIMG_FB */
 /* #undef W3MIMGDISPLAY_SETUID */
@@ -80,9 +81,11 @@
 /* #undef USE_GDKPIXBUF */
 /* #undef USE_GTK2 */
 /* #undef USE_IMLIB2 */
-#define USE_XFACE 1
-#define USE_DICT 1
-#define USE_HISTORY 1
+/* #define USE_XFACE 1 */
+#undef USE_XFACE
+#undef USE_DICT
+/* #define USE_HISTORY 1 */
+#undef USE_HISTORY
 /* #undef FORMAT_NICE */
 #define ID_EXT
 /* #undef CLEAR_BUF */
@@ -122,12 +125,12 @@ typedef long long clen_t;
 #else
 typedef long clen_t;
 #endif
-#define HAVE_STRTOLL 1
-/* #undef HAVE_STROQ */
-#define HAVE_ATOLL 1
-/* #undef HAVE_ATOQ */
-#define HAVE_STRCASECMP 1
-/* #undef HAVE_STRCASESTR */
+/* #define HAVE_STRTOLL 1 */
+#undef HAVE_STROQ
+/* #define HAVE_ATOLL 1 */
+#undef HAVE_ATOQ
+/* #define HAVE_STRCASECMP 1 */
+#undef HAVE_STRCASESTR
 #define HAVE_STRCHR 1
 #define HAVE_STRERROR 1
 #define HAVE_SYS_ERRLIST 1
@@ -135,8 +138,8 @@ typedef long clen_t;
 /* #undef HAVE_WAITPID */
 /* #undef HAVE_WAIT3 */
 #define HAVE_STRFTIME 1
-#define HAVE_GETCWD 1
-/* #undef HAVE_GETWD */
+/* #define HAVE_GETCWD 1 */
+#undef HAVE_GETWD
 /* #undef HAVE_SYMLINK */
 /* #undef HAVE_READLINK */
 /* #undef HAVE_LSTAT */
@@ -172,7 +175,8 @@ typedef RETSIGTYPE MySignalHandler;
 #define SIGNAL_RETURN return
 
 #ifdef HAVE_SIGSETJMP
-#ifdef __MINGW32_VERSION
+/* mumurik #ifdef __MINGW32_VERSION */
+#if defined(__MINGW32_VERSION) || defined(MONA)
 # define SETJMP(env) setjmp(env)
 # define LONGJMP(env,val) longjmp(env, val)
 # define JMP_BUF jmp_buf

@@ -3,8 +3,10 @@
 #ifndef __MINGW32_VERSION
 #include <sys/types.h>
 #include <sys/socket.h>
+#ifndef MONA
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#endif /* not MONA */
 #include <netdb.h>
 #else
 #include <winsock.h>
@@ -14,7 +16,9 @@
 #include <setjmp.h>
 #include <errno.h>
 
+#ifndef MONA
 #include <sys/stat.h>
+#endif /* not MONA */
 #ifdef __EMX__
 #include <io.h>			/* ?? */
 #endif				/* __EMX__ */
@@ -40,6 +44,52 @@
 #define close(fd)	closesocket(fd)
 #endif
 
+#ifdef MONA
+/* poring utility */
+static int
+write(int s, void* data, int size)
+{
+   return send(s, data, size, 0);
+}
+static int
+close(int sockfd)
+{
+   return closesocket(sockfd);
+}
+static void
+inet_ntop(int family, struct in_addr* sin_addr, char *addr, int size)
+{
+  if(size < 16) {
+      MONA_TRACE("temp inet_ntop, not enough size, never happend\n");
+      return ;
+  }
+  u32_t s_addr = sin_addr->s_addr;
+  char inv[3];
+  char *rp;
+  u8_t *ap;
+  u8_t rem;
+  u8_t n;
+  u8_t i;
+
+  rp = addr;
+  ap = (u8_t *)&s_addr;
+  for(n = 0; n < 4; n++) {
+    i = 0;
+    do {
+      rem = *ap % (u8_t)10;
+      *ap /= (u8_t)10;
+      inv[i++] = '0' + rem;
+    } while(*ap);
+    while(i--)
+      *rp++ = inv[i];
+    *rp++ = '.';
+    ap++;
+  }
+  *--rp = 0;
+}
+#endif
+
+
 #ifdef INET6
 /* see rc.c, "dns_order" and dnsorders[] */
 int ai_family_order_table[7][3] = {
@@ -51,7 +101,12 @@ int ai_family_order_table[7][3] = {
     {PF_UNSPEC, PF_UNSPEC, PF_UNSPEC},  /* 5: --- */
     {PF_INET6, PF_UNSPEC, PF_UNSPEC},   /* 6:inet6 */
 };
-#endif				/* INET6 */
+#elif defined(MONA) /* not INET6, but MONA */
+int ai_family_order_table[2][3] = {
+    {PF_UNSPEC, PF_UNSPEC, PF_UNSPEC},	/* 0:unspec */
+    {PF_INET, PF_UNSPEC, PF_UNSPEC},    /* 1:inet */
+};
+#endif				/* not INET6, but MONA */
 
 static JMP_BUF AbortLoading;
 
@@ -449,19 +504,19 @@ openSocket(char *const hostname,
 	   char *remoteport_name, unsigned short remoteport_num)
 {
     volatile int sock = -1;
-#ifdef INET6
+#if defined(INET6) || defined(MONA)
     int *af;
     struct addrinfo hints, *res0, *res;
     int error;
     char *hname;
-#else				/* not INET6 */
+#else				/* not INET6 and MONA */
     struct sockaddr_in hostaddr;
     struct hostent *entry;
     struct protoent *proto;
     unsigned short s_port;
     int a1, a2, a3, a4;
     unsigned long adr;
-#endif				/* not INET6 */
+#endif				/* not INET6 and MONA */
     MySignalHandler(*volatile prevtrap) (SIGNAL_ARG) = NULL;
 
     if (fmInitialized) {
@@ -486,7 +541,7 @@ openSocket(char *const hostname,
 	goto error;
     }
 
-#ifdef INET6
+#if defined(INET6) || defined(MONA)
     /* rfc2732 compliance */
     hname = hostname;
     if (hname != NULL && hname[0] == '[' && hname[strlen(hname) - 1] == ']') {
@@ -541,7 +596,7 @@ openSocket(char *const hostname,
 	freeaddrinfo(res0);
 	break;
     }
-#else				/* not INET6 */
+#else				/* not INET6 && MONA */
     s_port = htons(remoteport_num);
     bzero((char *)&hostaddr, sizeof(struct sockaddr_in));
     if ((proto = getprotobyname("tcp")) == NULL) {
@@ -620,7 +675,7 @@ openSocket(char *const hostname,
 	    goto error;
 	}
     }
-#endif				/* not INET6 */
+#endif				/* not INET6 && MONA */
 
     TRAP_OFF;
     return sock;
@@ -782,7 +837,7 @@ parseURL(char *url, ParsedURL *p_url, ParsedURL *current)
     /*          ^p is here  */
   analyze_url:
     q = p;
-#ifdef INET6
+#if defined(INET6) || defined(MONA)
     if (*q == '[') {		/* rfc2732,rfc2373 compliance */
 	p++;
 	while (IS_XDIGIT(*p) || *p == ':' || *p == '.')
@@ -1938,7 +1993,7 @@ check_no_proxy(char *domain)
     }
     TRAP_ON;
     {
-#ifndef INET6
+#if !defined(INET6) && !defined(MONA)
 	struct hostent *he;
 	int n;
 	unsigned char **h_addr_list;
@@ -1963,7 +2018,7 @@ check_no_proxy(char *domain)
 		}
 	    }
 	}
-#else				/* INET6 */
+#else				/* INET6 or MONA */
 	int error;
 	struct addrinfo hints;
 	struct addrinfo *res, *res0;
@@ -1988,11 +2043,13 @@ check_no_proxy(char *domain)
 			      &((struct sockaddr_in *)res->ai_addr)->sin_addr,
 			      addr, sizeof(addr));
 		    break;
+#ifndef MONA
 		case AF_INET6:
 		    inet_ntop(AF_INET6,
 			      &((struct sockaddr_in6 *)res->ai_addr)->
 			      sin6_addr, addr, sizeof(addr));
 		    break;
+#endif
 		default:
 		    /* unknown */
 		    continue;
@@ -2010,7 +2067,7 @@ check_no_proxy(char *domain)
 		break;
 	    }
 	}
-#endif				/* INET6 */
+#endif				/* INET6 or MONA */
     }
   end:
     TRAP_OFF;

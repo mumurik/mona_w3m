@@ -1,8 +1,8 @@
 /* $Id: ftp.c,v 1.39 2007/05/31 01:19:50 inu Exp $ */
 #include <stdio.h>
-#ifndef __MINGW32_VERSION
+#if !defined(__MINGW32_VERSION) && !defined(MONA)
 #include <pwd.h>
-#endif /* __MINGW32_VERSION */
+#endif /* not __MINGW32_VERSION && not MONA */
 #include <Str.h>
 #include <signal.h>
 #include <setjmp.h>
@@ -18,12 +18,27 @@
 
 #ifndef __MINGW32_VERSION
 #include <sys/socket.h>
+#ifndef MONA
 #include <netinet/in.h>
+#endif
 #include <netdb.h>
+#ifndef MONA
 #include <arpa/inet.h>
+#endif
 #else
 #include <winsock.h>
 #endif /* __MINGW32_VERSION */
+
+#ifdef MONA
+/* ret value of gmtime is static variable, use carefully. */
+struct tm*
+localtime(const time_t *timer)
+{
+   int gmt_t = *timer;
+   int jpy_t = gmt_t + 60*60*8;
+   return gmtime((const time_t *)jpy_t);
+}
+#endif
 
 typedef struct _FTP {
     char *host;
@@ -127,6 +142,7 @@ ftp_login(FTP ftp)
 	size_t n = strlen(ftp->pass);
 
 	if (n > 0 && ftp->pass[n - 1] == '@') {
+#ifndef MONA
 	    struct sockaddr_in sockname;
 	    int socknamelen = sizeof(sockname);
 
@@ -144,10 +160,15 @@ ftp_login(FTP ftp)
 
 		ftp->pass = tmp->ptr;
 	    }
+#endif /* not MONA */
 	}
     }
     ftp->rf = newInputStream(sock);
+#ifdef MONA
+    ftp->wf = 0;
+#else
     ftp->wf = fdopen(dup(sock), "wb");
+#endif
     if (!ftp->rf || !ftp->wf)
 	goto open_err;
     IStype(ftp->rf) |= IST_UNCLOSE;
@@ -244,8 +265,14 @@ ftp_pasv(FTP ftp)
     }
     if (data < 0)
 	return -1;
+#ifdef MONA
+    MONA_TRACE("ftp passive, always fail for a while\n");
+    closesocket(data);
+    return 0;
+#else
     ftp->data = fdopen(data, "rb");
     return 0;
+#endif
 }
 
 static time_t
@@ -377,7 +404,7 @@ openFTPStream(ParsedURL *pu, URLFile *uf)
 		term_cbreak();
 	    }
 	    else {
-#ifndef __MINGW32_VERSION
+#if !defined(__MINGW32_VERSION) && !defined(MONA)
 		pwd = Strnew_charp((char *)getpass("Password: "));
 #else
 		term_raw();
@@ -393,7 +420,7 @@ openFTPStream(ParsedURL *pu, URLFile *uf)
     else if (ftppasswd != NULL && *ftppasswd != '\0')
 	pass = ftppasswd;
     else {
-#ifndef __MINGW32_VERSION
+#if !defined(__MINGW32_VERSION) && !defined(MONA)
 	struct passwd *mypw = getpwuid(getuid());
 	tmp = Strnew_charp(mypw ? mypw->pw_name : "anonymous");
 #else
