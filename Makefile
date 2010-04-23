@@ -132,11 +132,11 @@ CSOURCES=$(ALLCOBJS:.o=.c)
 OBJECTS=$(ALLOBJS)
 
 ifneq ($(BUILD_TARGET),ELF)
-ADDLINK    =  -lmonalibc-imp -lbaygui-imp -L. -lindep --enable-auto-import
+ADDLINK    =  -L. -lindep -lmonalibc-imp -lbaygui-imp --enable-auto-import
 ADDLINKDEP = $(MONADIR)/lib/libbaygui-imp.a $(MONADIR)/lib/libmonalibc-imp.a libindep.a
 include $(SHAREDIR)/configs/monapi-ex5.inc
 else
-ADDLINK    = -lbaygui-imp -lmonalibc-imp -lmonapi-imp -L. -lindep
+ADDLINK    = -L. -lindep -lbaygui-imp -lmonalibc-imp -lmonapi-imp
 ADDLINKDEP = $(MONADIR)/lib/libbaygui.a $(MONADIR)/lib/libmonalibc.a libindep.a
 include $(SHAREDIR)/configs/monapi-el5.inc
 endif
