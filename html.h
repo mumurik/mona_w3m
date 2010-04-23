@@ -7,6 +7,10 @@
 #include <openssl/ssl.h>
 #endif				/* USE_SSL */
 
+#ifdef MONA
+#include <time.h>
+#endif
+
 #include "istream.h"
 
 #define StrUFgets(f) StrISgets((f)->stream)

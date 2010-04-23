@@ -5,7 +5,9 @@
  *
  *   Created: Wed Feb 10 12:47:03 1999
  */
+#ifndef MONA
 extern int main(int argc, char **argv, char **envp);
+#endif
 extern void nulcmd(void);
 extern void pushEvent(int cmd, void *data);
 extern MySignalHandler intTrap(SIGNAL_ARG);

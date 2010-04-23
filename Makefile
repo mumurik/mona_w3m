@@ -132,11 +132,11 @@ CSOURCES=$(ALLCOBJS:.o=.c)
 OBJECTS=$(ALLOBJS)
 
 ifneq ($(BUILD_TARGET),ELF)
-ADDLINK    =  -lmonalibc-imp -lbaygui-imp -lindep.a --enable-auto-import
+ADDLINK    =  -lmonalibc-imp -lbaygui-imp -L. -lindep --enable-auto-import
 ADDLINKDEP = $(MONADIR)/lib/libbaygui-imp.a $(MONADIR)/lib/libmonalibc-imp.a libindep.a
 include $(SHAREDIR)/configs/monapi-ex5.inc
 else
-ADDLINK    = -lbaygui-imp -lmonalibc-imp -lmonapi-imp -lindep.a
+ADDLINK    = -lbaygui-imp -lmonalibc-imp -lmonapi-imp -L. -lindep
 ADDLINKDEP = $(MONADIR)/lib/libbaygui.a $(MONADIR)/lib/libmonalibc.a libindep.a
 include $(SHAREDIR)/configs/monapi-el5.inc
 endif
@@ -181,7 +181,9 @@ SUBDIRS = $(SCRIPTSUBDIRS) w3mimg libwc po
 #	$(CC) $(CFLAGS) -o $(TARGET) $(ALLOBJS) $(LDFLAGS) $(LIBS) $(EXT_LIBS) $(W3M_LIBS)
 
 $(ALIB): $(ALIBOBJS)
-	$(AR) rv $(ALIB) $(ALIBOBJS)
+	# $(AR) rv $(ALIB) $(ALIBOBJS)
+	#$(AR) $(ALIB) $(ALIBOBJS) -L$(LIBDIR) $(ADDLINK)
+	$(AR) $(ALIB) $(ALIBOBJS)
 	$(RANLIB) $(ALIB)
 
 $(OBJS) $(LOBJS): fm.h funcname1.h
@@ -351,6 +353,9 @@ uninstall:
 #	do	\
 #		(cd $$dir && $(MAKE) clean); \
 #	done
+
+alclean:
+	rm $(ALIBOBJS)
 
 distclean: clean
 	for subdir in po scripts w3mimg libwc; \

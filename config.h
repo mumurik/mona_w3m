@@ -66,10 +66,12 @@
 /* #undef USE_DIGEST_AUTH */
 /* #undef USE_SSL */
 /* #undef USE_SSL_VERIFY */
-#define USE_HELP_CGI 1
+/* #define USE_HELP_CGI 1 */
+#undef USE_HELP_CGI
 #define USE_EXTERNAL_URI_LOADER 1
 #define USE_W3MMAILER 1
-#define USE_NNTP 1
+/* #define USE_NNTP 1 */
+#undef USE_NNTP
 /* #undef USE_GOPHER */
 /* #undef USE_ALARM */
 /* #define USE_IMAGE 1 */
@@ -119,7 +121,7 @@
 #define HAVE_LOCALE_H 1
 #define HAVE_STDINT_H 1
 #define HAVE_INTTYPES_H 1
-#define SIZEOF_LONG_LONG 8
+/* #define SIZEOF_LONG_LONG 8 */
 #if SIZEOF_LONG_LONG > 0
 typedef long long clen_t;
 #else

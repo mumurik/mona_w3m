@@ -61,8 +61,13 @@ searchMailcap(struct mailcap *table, char *type)
 	    if (table->test) {
 		Str command =
 		    unquote_mailcap(table->test, type, NULL, NULL, NULL);
+#ifdef MONA
+                MONA_TRACE("mail cap\n");
+                continue;
+#else
 		if (system(command->ptr) != 0)
 		    continue;
+#endif
 	    }
 	    level = i;
 	    mcap = table;

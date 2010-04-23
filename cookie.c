@@ -443,7 +443,9 @@ save_cookies(void)
 		str2charp(p->commentURL));
     }
     fclose(fp);
+#ifndef MONA
     chmod(cookie_file, S_IRUSR | S_IWUSR);
+#endif
 }
 
 static Str

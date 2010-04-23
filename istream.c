@@ -3,6 +3,9 @@
 #include "myctype.h"
 #include "istream.h"
 #include <signal.h>
+#ifdef MONA
+#include <sys/socket.h>
+#endif
 #ifdef USE_SSL
 #include <openssl/x509v3.h>
 #endif
@@ -93,8 +96,8 @@ init_str_stream(BaseStream base, Str s)
 static int
 basic_fread(int *handle, char *buf, int len)
 {
-  FILE* fp = (FILE*)handle
-  return fread(buf, len, fp); 
+  FILE* fp = (FILE*)handle;
+  return fread(buf, 1, len, fp); 
 }
 static void
 basic_fclose(int *handle)
@@ -114,7 +117,7 @@ newInputStreamFopen(const char* path, const char *mode)
     init_base_stream(&stream->base, STREAM_BUF_SIZE);
     stream->base.type = IST_BASIC;
     stream->base.handle = New(int);
-    *(int *)stream->base.handle = (int*)fp;
+    *(int *)stream->base.handle = (int)fp;
     stream->base.read = (int (*)())basic_fread;
     stream->base.close = (void (*)())basic_fclose;
     return stream;
@@ -218,9 +221,13 @@ ISclose(InputStream stream)
     if (stream == NULL || stream->base.close == NULL ||
 	stream->base.type & IST_UNCLOSE)
 	return -1;
+#ifdef MONA
+    stream->base.close(stream->base.handle);
+#else
     prevtrap = mySignal(SIGINT, SIG_IGN);
     stream->base.close(stream->base.handle);
     mySignal(SIGINT, prevtrap);
+#endif
     return 0;
 }
 
@@ -652,7 +659,7 @@ ssl_get_certificate(SSL * ssl, char *hostname)
 static void
 basic_close(int *handle)
 {
-#ifdef __MINGW32_VERSION
+#if defined(__MINGW32_VERSION) || defined(MONA)
     closesocket(*(int *)handle);
 #else
     close(*(int *)handle);
@@ -662,7 +669,7 @@ basic_close(int *handle)
 static int
 basic_read(int *handle, char *buf, int len)
 {
-#ifdef __MINGW32_VERSION
+#if defined(__MINGW32_VERSION) || defined(MONA)
     return recv(*(int *)handle, buf, len, 0);
 #else
     return read(*(int *)handle, buf, len);
